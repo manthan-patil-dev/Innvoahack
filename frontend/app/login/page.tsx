@@ -6,13 +6,13 @@ import { AlertBanner } from "@/components/states/AlertBanner";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 /**
- * Sign-in is Supabase Auth, email and password. No social buttons: a control
- * that opens nothing is worse than not offering it.
+ * Sign-in and sign-up are Supabase Auth, email and password. No social buttons:
+ * a control that opens nothing is worse than not offering it.
  *
  * DEMO_EMAIL / DEMO_PASSWORD are only a display hint so a judge can get in
  * without being told the credentials out of band. They authenticate nothing on
- * their own — the account has to exist in Supabase Auth, and the password there
- * is the one that matters.
+ * their own — the account has to exist in Supabase Auth, which is why the form
+ * can create it.
  */
 export const dynamic = "force-dynamic";
 
