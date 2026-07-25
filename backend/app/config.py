@@ -44,11 +44,6 @@ class Settings(BaseSettings):
     lyzr_agent_id_critic: str = ""
     lyzr_agent_id_response: str = ""
 
-    # Supabase (reserved — schema step deferred)
-    supabase_url: str = ""
-    supabase_service_role_key: str = ""
-    demo_user_id: str = "00000000-0000-0000-0000-000000000001"
-
     # Server
     cors_origins: str = "http://localhost:3000"
     agent_timeout_seconds: int = 60

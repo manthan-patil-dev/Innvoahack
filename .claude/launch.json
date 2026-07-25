@@ -6,6 +6,13 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "frontend", "run", "dev"],
       "port": 3000
+    },
+    {
+      "//": "Pre-submission check: serves the real production build on its own port and its own dist dir, so it can run alongside `lifeos-frontend`. Build it first with: npm --prefix frontend run build:prod",
+      "name": "lifeos-frontend-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "frontend", "run", "start:prod"],
+      "port": 3100
     }
   ]
 }

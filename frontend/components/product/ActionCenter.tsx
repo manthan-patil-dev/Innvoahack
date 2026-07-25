@@ -16,7 +16,9 @@ import { cn } from "@/lib/utils";
  * so there is deliberately no "Cancel subscription" or "Block sender" button
  * here — a control that looks like it acts on your bank but silently does
  * nothing is the kind of thing that reads as a demo lie under questioning.
- * The copy says plainly that ticking is local.
+ *
+ * Ticks persist to Supabase once the run has been saved. Before that (and if
+ * the save failed) they are session-local, and the copy below says which.
  */
 
 const DOT: Record<ActionPriority, string> = {
@@ -35,18 +37,39 @@ const KIND_LABEL: Record<string, string> = {
   warning: "Warning",
 };
 
-export function ActionCenter({ items }: { items: ActionItem[] }) {
+export function ActionCenter({
+  items,
+  /** Supabase `runs.id`. Absent until the run has been saved. */
+  runId,
+}: {
+  items: ActionItem[];
+  runId?: string;
+}) {
   const [done, setDone] = useState<Set<string>>(new Set());
 
   if (items.length === 0) return null;
 
-  const toggle = (id: string) =>
+  const toggle = (id: string) => {
+    let nextDone = false;
+
     setDone((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      nextDone = next.has(id);
       return next;
     });
+
+    // Optimistic: the checkbox has already moved. A failed write leaves the tick
+    // where the user put it for this session rather than snapping back, which
+    // would read as the UI fighting them.
+    if (!runId) return;
+    void fetch("/api/actions", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ runId, clientKey: id, done: nextDone }),
+    }).catch(() => {});
+  };
 
   return (
     <Card className="overflow-hidden">
@@ -54,8 +77,10 @@ export function ActionCenter({ items }: { items: ActionItem[] }) {
         <div>
           <SectionLabel>Action center</SectionLabel>
           <p className="mt-2 max-w-prose text-meta text-ink-subtle">
-            Collected from every agent that ran. Ticking is local to this session — LifeOS does
-            not act on your accounts.
+            Collected from every agent that ran.{" "}
+            {runId
+              ? "Ticks are saved to your account — but LifeOS does not act on your accounts."
+              : "Ticking is local to this session — LifeOS does not act on your accounts."}
           </p>
         </div>
         <span className="shrink-0 text-meta tnum text-ink-subtle">

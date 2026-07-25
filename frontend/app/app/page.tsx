@@ -128,7 +128,7 @@ function RunView({ run }: { run: RunState }) {
 
       {run.response ? (
         <div className="animate-fade-rise">
-          <UnifiedReport response={run.response} nodes={run.nodes} />
+          <UnifiedReport response={run.response} nodes={run.nodes} run={run} />
         </div>
       ) : null}
 
@@ -138,8 +138,10 @@ function RunView({ run }: { run: RunState }) {
           above explains the omission. */}
       {run.response && !run.intent?.clarification_needed ? (
         <div className="animate-fade-rise">
-          {/* Keyed by run so the checklist never carries over between runs. */}
-          <ActionCenter key={run.id} items={collectActions(run)} />
+          {/* Keyed by run so the checklist never carries over between runs.
+              runId arrives once the run has been saved; until then ticking is
+              local, which is what the card says. */}
+          <ActionCenter key={run.id} items={collectActions(run)} runId={run.persistedId} />
         </div>
       ) : null}
     </div>

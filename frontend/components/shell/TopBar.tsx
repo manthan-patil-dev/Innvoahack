@@ -2,6 +2,7 @@ import Link from "next/link";
 import { History, LayoutGrid } from "lucide-react";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
 import { HealthChip } from "@/components/shell/HealthChip";
+import { AccountMenu } from "@/components/shell/AccountMenu";
 import { LogoMark } from "@/components/brand/Logo";
 
 export function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
@@ -41,6 +42,7 @@ export function TopBar({ title, subtitle }: { title: string; subtitle?: string }
         </nav>
 
         <ThemeToggle />
+        <AccountMenu />
       </div>
     </header>
   );

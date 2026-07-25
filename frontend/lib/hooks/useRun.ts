@@ -1,9 +1,33 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { AgentResult, ChatRequestPayload, RunState } from "@/lib/types/agents";
+import type { AgentResult, ChatRequestPayload, ChatResponse, RunState } from "@/lib/types/agents";
 import { ApiError, postChat } from "@/lib/api/client";
 import { isSpecialist, revealDurations, toRunState } from "@/lib/api/adapt";
+import { collectActions } from "@/lib/actions";
+
+/**
+ * Save a finished run to Supabase, then attach its row id to the run on screen.
+ *
+ * Deliberately fire-and-forget: the answer is already rendered, and a database
+ * that is slow or down must not be able to take it away. A failure logs and the
+ * run simply never gains a `persistedId`, which the Action Center reads as
+ * "ticking is local to this session".
+ */
+async function persistRun(settled: RunState, chat: ChatResponse): Promise<string | null> {
+  try {
+    const response = await fetch("/api/runs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat, actions: collectActions(settled) }),
+    });
+    if (!response.ok) return null;
+    const body = (await response.json()) as { runId?: string };
+    return body.runId ?? null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Drives one orchestration run against the real backend.
@@ -107,6 +131,13 @@ export function useRun() {
       const durations = revealDurations(settled.nodes);
 
       setRun({ ...settled, nodes: settled.nodes, results: [], response: null });
+
+      // Save alongside the reveal, not before it — the trace animation must not
+      // wait on a database round trip.
+      void persistRun(settled, data).then((persistedId) => {
+        if (!persistedId || seq !== runSeq.current || !mounted.current) return;
+        setRun((prev) => (prev ? { ...prev, persistedId } : prev));
+      });
 
       let elapsed = 0;
 

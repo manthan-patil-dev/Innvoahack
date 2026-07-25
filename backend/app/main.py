@@ -18,13 +18,14 @@ logger = logging.getLogger("lifeos")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    settings = get_settings()
     backend = get_router()
-    logger.info("LifeCore online — backend=%s model=%s", backend.active_name, settings.claude_model)
+    # active_model, not settings.claude_model: quoting CLAUDE_MODEL while
+    # serving Groq put a model name in the log that never ran.
+    logger.info("LifeCore online — backend=%s model=%s", backend.active_name, backend.active_model)
     if backend.active_name == "mock":
         logger.warning(
-            "No ANTHROPIC_API_KEY or LYZR_API_KEY configured. Running on scripted "
-            "fixtures — orchestration is real, agent content is canned."
+            "No LLM provider key configured (LYZR / ANTHROPIC / OPENAI / GROQ / GEMINI). "
+            "Running on scripted fixtures — orchestration is real, agent content is canned."
         )
     yield
     await backend.aclose()

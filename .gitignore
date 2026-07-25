@@ -3,8 +3,8 @@
 .env
 .env.*
 !.env.example
-
-# --- Python ------------------------------------------------------------
+.env.local 
+#--- Python ------------------------------------------------------------
 .venv/
 venv/
 __pycache__/
@@ -15,6 +15,8 @@ __pycache__/
 # --- Node / Next -------------------------------------------------------
 node_modules/
 .next/
+# Isolated production build dir (NEXT_DIST_DIR) used by the pre-submission check.
+.next-prod/
 out/
 *.tsbuildinfo
 

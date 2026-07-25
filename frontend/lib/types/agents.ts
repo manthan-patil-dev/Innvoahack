@@ -197,8 +197,11 @@ export interface RunState {
   response: ResponseOutput | null;
   status: "idle" | "running" | "complete" | "error";
   error?: string;
-  /** Which LLM backend served this run ("mock" | "claude" | "lyzr"). */
+  /** Which LLM backend served this run ("mock" | "groq" | "openai" | "lyzr"). */
   backend?: string;
+  /** Supabase `runs.id`, once the run has been saved. Absent means it has not
+   *  been (yet, or at all) — the UI degrades rather than blocking on it. */
+  persistedId?: string;
   /** True while awaiting /api/chat, before the first node is revealed. */
   dispatching?: boolean;
   /** How LifeCore read the request — drives the routing rationale. */

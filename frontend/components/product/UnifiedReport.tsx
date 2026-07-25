@@ -1,10 +1,11 @@
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { PipelineNode, ResponseOutput } from "@/lib/types/agents";
+import type { PipelineNode, ResponseOutput, RunState } from "@/lib/types/agents";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertBanner } from "@/components/states/AlertBanner";
 import { SectionLabel } from "@/components/ui/section-label";
+import { SendReportEmail } from "@/components/product/SendReportEmail";
 
 const ALERT_TONE = {
   CRITICAL: "danger",
@@ -22,11 +23,16 @@ const STATUS_VARIANT = {
 export function UnifiedReport({
   response,
   nodes = [],
+  run,
 }: {
   response: ResponseOutput;
   /** Pipeline nodes for the same run. The action log carries no timings or
    *  retry notes of its own — both live here, matched by step number. */
   nodes?: PipelineNode[];
+  /** Supplied on the workspace, omitted in the style guide. Sending needs the
+   *  whole run — the query, the backend and the collected actions all travel
+   *  with the report. */
+  run?: RunState;
 }) {
   const byStep = new Map(nodes.map((n) => [n.step, n]));
   const retries = response.action_log.filter((e) => e.status === "RETRY").length;
@@ -132,6 +138,8 @@ export function UnifiedReport({
           ) : null}
         </div>
       </details>
+
+      {run ? <SendReportEmail run={run} /> : null}
     </Card>
   );
 }
