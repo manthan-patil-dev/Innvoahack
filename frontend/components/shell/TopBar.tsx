@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { History, LayoutGrid } from "lucide-react";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
-import { StatusDot } from "@/components/ui/badge";
+import { HealthChip } from "@/components/shell/HealthChip";
 import { LogoMark } from "@/components/brand/Logo";
 
 export function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
@@ -20,10 +20,7 @@ export function TopBar({ title, subtitle }: { title: string; subtitle?: string }
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-        <span className="hidden items-center gap-2 sm:inline-flex">
-          <StatusDot status="success" />
-          <span className="eyebrow">LifeCore online</span>
-        </span>
+        <HealthChip />
 
         {/* Mobile-only navigation, since the rail is not rendered. */}
         <nav aria-label="Sections" className="flex items-center gap-1 md:hidden">
