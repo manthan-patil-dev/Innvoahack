@@ -14,6 +14,8 @@ import { deriveConfidence } from "@/lib/confidence";
 import { collectActions } from "@/lib/actions";
 import { EmptyState } from "@/components/states/EmptyState";
 import { AlertBanner } from "@/components/states/AlertBanner";
+import { DemoNotice } from "@/components/states/DemoNotice";
+import { DEMO_PROMPTS } from "@/lib/mock/agentOutputs";
 import { Card } from "@/components/ui/card";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,6 +38,40 @@ function DispatchingTrace() {
   );
 }
 
+/**
+ * One-click re-run of the three scripted scenarios, once a run is on screen.
+ * The empty state offers these too, but after the first run they are otherwise
+ * only reachable by retyping — which is exactly the wrong thing to be doing
+ * live in front of an audience.
+ */
+function ScenarioChips({
+  onPick,
+  disabled,
+}: {
+  onPick: (query: string) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="mb-3 flex flex-wrap gap-2">
+      <span className="eyebrow self-center text-ink-subtle">Demo</span>
+      {DEMO_PROMPTS.map((prompt) => (
+        <button
+          key={prompt}
+          type="button"
+          onClick={() => onPick(prompt)}
+          disabled={disabled}
+          // Full prompt stays the accessible name; the visible label is trimmed.
+          aria-label={prompt}
+          title={prompt}
+          className="max-w-[15rem] truncate rounded-sm border bg-surface px-2.5 py-1 text-meta text-ink-muted transition-colors duration-fast ease-io hover:border-line-strong hover:bg-surface-sunken hover:text-ink disabled:opacity-40"
+        >
+          {prompt}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function RunView({ run }: { run: RunState }) {
   const settled = run.nodes.filter((n) => n.status === "success" || n.status === "failed").length;
 
@@ -45,6 +81,13 @@ function RunView({ run }: { run: RunState }) {
         <SectionLabel className="mb-2.5">Your request</SectionLabel>
         <p className="max-w-prose font-display text-h1 leading-snug">{run.query}</p>
       </div>
+
+      {/* Keyed on the serving backend, not on fixture prose. */}
+      {run.response ? (
+        <div className="animate-fade-rise">
+          <DemoNotice run={run} />
+        </div>
+      ) : null}
 
       {run.status === "error" ? (
         <div className="animate-fade-rise">
@@ -89,7 +132,11 @@ function RunView({ run }: { run: RunState }) {
         </div>
       ) : null}
 
-      {run.response ? (
+      {/* No action surface for a run the fixtures could not answer: the
+          specialist output is canned, so "Cancel the gym membership" is not a
+          real instruction for someone who asked about the weather. The notice
+          above explains the omission. */}
+      {run.response && !run.intent?.clarification_needed ? (
         <div className="animate-fade-rise">
           {/* Keyed by run so the checklist never carries over between runs. */}
           <ActionCenter key={run.id} items={collectActions(run)} />
@@ -122,6 +169,7 @@ export default function AppPage() {
 
           <div className="sticky bottom-0 border-t bg-bg/90 px-5 py-4 backdrop-blur-md lg:px-8">
             <div className="mx-auto max-w-3xl">
+              {run ? <ScenarioChips onPick={submit} disabled={isRunning} /> : null}
               <ChatComposer onSubmit={submit} disabled={isRunning} />
             </div>
           </div>

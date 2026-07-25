@@ -170,7 +170,8 @@ def _extract_query(built_input: str) -> str:
     return built_input.split("\n", 1)[0].strip()
 
 
-def _domains(query: str) -> list[str]:
+def _raw_domains(query: str) -> list[str]:
+    """Domains the query actually matches. May legitimately be empty."""
     q = _extract_query(query).lower()
     domains: list[str] = []
     if re.search(r"goa|trip|travel|itinerar|vacation|holiday", q):
@@ -181,7 +182,24 @@ def _domains(query: str) -> list[str]:
         domains.append("security")
     if re.search(r"bill|invoice|document|pdf|summari[sz]e|receipt", q):
         domains.append("document")
-    return domains or ["finance"]
+    return domains
+
+
+def matched_scenario(query: str) -> bool:
+    """Whether the query hits one of the three scripted scenarios.
+
+    Mock mode has fixtures for spending, trip planning and link/document
+    safety, and nothing else. Anything else still runs the pipeline — the
+    orchestration is genuine — but the specialist content is canned and has
+    no relationship to what was asked. Callers use this to say so, rather
+    than letting a question about the weather come back as a confident
+    ₹42,380 spending analysis.
+    """
+    return bool(_raw_domains(query))
+
+
+def _domains(query: str) -> list[str]:
+    return _raw_domains(query) or ["finance"]
 
 
 def _plan(query: str) -> list[dict]:
@@ -196,6 +214,18 @@ def _plan(query: str) -> list[dict]:
         for i, d in enumerate(_domains(query), start=1)
         if d in mapping
     ]
+
+
+UNMATCHED_REPORT = (
+    "## Outside the scripted demo\n\n"
+    "This request does not match any scenario mock mode has fixtures for, so the "
+    "specialist output below is **canned finance data and is not an answer to what "
+    "you asked**.\n\n"
+    "The orchestration itself is real — intent, planning, routing, validation and "
+    "synthesis all ran. Only the agent content is scripted.\n\n"
+    "Mock mode covers spending analysis, trip planning, and link or document safety. "
+    "Set `ANTHROPIC_API_KEY` in `backend/.env` to answer anything else for real.\n"
+)
 
 
 def _response(query: str) -> dict:
@@ -220,18 +250,33 @@ def _response(query: str) -> dict:
     if "travel" in domains:
         scores.append(TRAVEL["travel_score"])
 
-    return {
-        "headline": "LifeOS ran your request through the full agent pipeline and merged the findings.",
-        "unified_report": (
+    matched = matched_scenario(query)
+    agents_ran = "\n".join(f"- {step['agent']} — {step['task']}" for step in _plan(query))
+
+    if matched:
+        report = (
             "## What LifeOS did\n\n"
             "This run is being served from **scripted fixtures** — no API key is configured, "
             "so the orchestration is real but the agent content is canned.\n\n"
             "Set `ANTHROPIC_API_KEY` (or a Lyzr key) in `backend/.env` and the same pipeline "
             "produces live output with no code change.\n\n"
-            "### Agents that ran\n\n"
-            + "\n".join(f"- {step['agent']} — {step['task']}" for step in _plan(query))
+            "### Agents that ran\n\n" + agents_ran
+        )
+    else:
+        report = UNMATCHED_REPORT + "\n### Agents that ran\n\n" + agents_ran
+
+    return {
+        "headline": (
+            "LifeOS ran your request through the full agent pipeline and merged the findings."
+            if matched
+            else "This request is outside the scripted demo — the content below is canned."
         ),
-        "priority_alerts": alerts or [{"level": "NORMAL", "message": "No urgent items."}],
+        "unified_report": report,
+        "priority_alerts": (alerts or [{"level": "NORMAL", "message": "No urgent items."}])
+        if matched
+        # Suppressing these matters: an unmatched query must not raise a
+        # CRITICAL alert about subscriptions the user never asked about.
+        else [{"level": "NORMAL", "message": "No scripted scenario matched this request."}],
         "action_log": [
             {"step": 1, "agent": "IntentAgent", "action": "Classified the request", "status": "SUCCESS"},
             {"step": 2, "agent": "PlannerAgent", "action": "Decomposed into sub-tasks", "status": "SUCCESS"},
@@ -243,6 +288,8 @@ def _response(query: str) -> dict:
             "finance_score": finance_score,
             "security_score": security_score,
             "life_score": round(sum(scores) / len(scores)),
+            # An unmatched query must not seed the Action Center with a
+            # reminder about a gym membership it never asked about.
             "reminders": [
                 {
                     "id": "r1",
@@ -251,7 +298,9 @@ def _response(query: str) -> dict:
                     "priority": "HIGH",
                     "source": "FinanceAgent",
                 }
-            ],
+            ]
+            if matched and "finance" in domains
+            else [],
         },
     }
 
@@ -261,13 +310,21 @@ def completion_for(agent_name: str, user_input: str) -> str:
     domains = _domains(user_input)
 
     if agent_name == "IntentAgent":
+        matched = matched_scenario(user_input)
         return json.dumps(
             {
                 "domains": domains,
                 "complexity": "multi" if len(domains) > 1 else "single",
                 "requires_file": "document" in domains,
-                "clarification_needed": False,
-                "clarification_question": None,
+                # The existing contract field, finally carrying a real signal:
+                # in mock mode it flags a request the fixtures cannot answer.
+                "clarification_needed": not matched,
+                "clarification_question": None
+                if matched
+                else (
+                    "Demo mode has fixtures for spending analysis, trip planning, and link "
+                    "or document safety. Ask about one of those, or configure an API key."
+                ),
             }
         )
 
