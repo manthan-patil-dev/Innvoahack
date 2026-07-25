@@ -9,11 +9,31 @@ import { PipelineTrace } from "@/components/product/PipelineTrace";
 import { AgentResultCard } from "@/components/product/AgentResultCard";
 import { UnifiedReport } from "@/components/product/UnifiedReport";
 import { EmptyState } from "@/components/states/EmptyState";
+import { AlertBanner } from "@/components/states/AlertBanner";
 import { Card } from "@/components/ui/card";
 import { SectionLabel } from "@/components/ui/section-label";
+import { Skeleton } from "@/components/ui/skeleton";
+
+/** Awaiting /api/chat. The node list is unknown until LifeCore replies, so we
+ *  show weight rather than inventing placeholder steps. */
+function DispatchingTrace() {
+  return (
+    <div className="space-y-4" aria-live="polite" aria-busy>
+      <span className="sr-only">Dispatching to LifeCore</span>
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="flex gap-4 pl-6">
+          <div className="min-w-0 flex-1 space-y-2">
+            <Skeleton className="h-3.5 w-32" />
+            <Skeleton className="h-3 w-full max-w-sm" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function RunView({ run }: { run: RunState }) {
-  const settled = run.nodes.filter((n) => n.status === "success").length;
+  const settled = run.nodes.filter((n) => n.status === "success" || n.status === "failed").length;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -22,15 +42,26 @@ function RunView({ run }: { run: RunState }) {
         <p className="max-w-prose font-display text-h1 leading-snug">{run.query}</p>
       </div>
 
-      <Card className="animate-fade-rise px-6 py-5">
-        <div className="mb-5 flex items-baseline justify-between gap-4">
-          <SectionLabel>LifeCore orchestration</SectionLabel>
-          <span className="text-meta tnum text-ink-subtle">
-            {settled} / {run.nodes.length}
-          </span>
+      {run.status === "error" ? (
+        <div className="animate-fade-rise">
+          <AlertBanner tone="danger" title="LifeCore unreachable">
+            {run.error ?? "The run could not be completed."}
+          </AlertBanner>
         </div>
-        <PipelineTrace nodes={run.nodes} />
-      </Card>
+      ) : null}
+
+      {/* A failed dispatch has no trace to show — the banner above says it all. */}
+      {run.status === "error" && run.nodes.length === 0 ? null : (
+        <Card className="animate-fade-rise px-6 py-5">
+          <div className="mb-5 flex items-baseline justify-between gap-4">
+            <SectionLabel>LifeCore orchestration</SectionLabel>
+            <span className="text-meta tnum text-ink-subtle">
+              {run.dispatching ? "dispatching…" : `${settled} / ${run.nodes.length}`}
+            </span>
+          </div>
+          {run.dispatching ? <DispatchingTrace /> : <PipelineTrace nodes={run.nodes} />}
+        </Card>
+      )}
 
       {run.results.map((result, i) => (
         <div key={`${result.agent}-${i}`} className="animate-fade-rise">
@@ -50,12 +81,17 @@ function RunView({ run }: { run: RunState }) {
 export default function AppPage() {
   const { run, submit, isRunning } = useRun();
 
+  // Naming the serving backend is deliberate: "mock" on screen is how we stay
+  // honest about whether a demo ran on fixtures or a live model.
+  const subtitle = !run
+    ? "LifeCore is idle"
+    : run.dispatching
+      ? "Dispatching to LifeCore…"
+      : `${run.nodes.length}-step run · ${run.status}${run.backend ? ` · ${run.backend}` : ""}`;
+
   return (
     <>
-      <TopBar
-        title="Orchestrator"
-        subtitle={run ? `${run.nodes.length}-step run · ${run.status}` : "LifeCore is idle"}
-      />
+      <TopBar title="Orchestrator" subtitle={subtitle} />
 
       <div className="flex flex-1">
         <div className="flex min-w-0 flex-1 flex-col">

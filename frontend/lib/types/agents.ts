@@ -197,6 +197,50 @@ export interface RunState {
   response: ResponseOutput | null;
   status: "idle" | "running" | "complete" | "error";
   error?: string;
+  /** Which LLM backend served this run ("mock" | "claude" | "lyzr"). */
+  backend?: string;
+  /** True while awaiting /api/chat, before the first node is revealed. */
+  dispatching?: boolean;
+}
+
+/* --- Wire types for /api/chat --------------------------------------------- */
+
+/** Request body for POST /api/chat. Mirrors backend ChatRequest. */
+export interface ChatRequestPayload {
+  message: string;
+  session_id?: string | null;
+  document_text?: string | null;
+  expenses?: Record<string, unknown>[] | null;
+}
+
+/** Raw specialist envelope as it arrives. Narrowed to AgentResult in the adapter. */
+export interface RawAgentResult {
+  agent: string;
+  output: Record<string, unknown>;
+}
+
+/** Response body from POST /api/chat. Mirrors backend ChatResponse. */
+export interface ChatResponse {
+  session_id: string;
+  query: string;
+  backend: string;
+  intent: IntentOutput;
+  selected_agents: string[];
+  results: RawAgentResult[];
+  response: ResponseOutput;
+  plan: PlanStep[];
+  nodes: PipelineNode[];
+  critic: CriticVerdict[];
+}
+
+/** Response body from GET /api/health. Mirrors backend HealthResponse. */
+export interface HealthResponse {
+  status: "ok" | "degraded";
+  service: string;
+  version: string;
+  backend: string;
+  model: string;
+  agents: string[];
 }
 
 /** One scripted end-to-end run. Mirrors what /api/chat will stream back. */
