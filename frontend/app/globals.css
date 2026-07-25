@@ -1,0 +1,381 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   LifeOS AI — Design Tokens
+   Single source of truth. No component may reference a raw hex value.
+   That rule is what keeps the second theme cheap.
+   ========================================================================== */
+
+@layer base {
+  :root {
+    color-scheme: light;
+
+    /* Surfaces */
+    --bg: #f7f4ee;
+    --surface: #ffffff;
+    --surface-sunken: #f1ede5;
+
+    /* Ink */
+    --ink: #111111;
+    --ink-muted: #6b6b6b;
+    --ink-subtle: #9a9590;
+    --ink-inverse: #f7f4ee;
+
+    /* Line */
+    --border: #e8e3da;
+    --border-strong: #d9d2c6;
+
+    /* Accent — gold is never a text color. See CONTRAST below. */
+    --gold: #b5965a;
+    --gold-soft: rgb(181 150 90 / 0.1);
+    --gold-line: rgb(181 150 90 / 0.38);
+
+    /* Status */
+    --success: #395b4a;
+    --success-soft: rgb(57 91 74 / 0.1);
+    --danger: #8a3b3b;
+    --danger-soft: rgb(138 59 59 / 0.09);
+
+    /* Elevation — exactly one shadow in the system, used sparingly.
+       Borders do the work that shadows do in generic SaaS. */
+    --shadow-e1: 0 1px 2px rgb(17 17 17 / 0.04), 0 8px 24px -14px rgb(17 17 17 / 0.1);
+
+    /* Radius — small radii read as editorial print.
+       12–16px is the tell of a template dashboard. */
+    --r-sm: 4px;
+    --r-md: 8px;
+
+    /* Motion */
+    --dur-fast: 160ms;
+    --dur: 240ms;
+    --dur-slow: 420ms;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-io: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Warm near-black, never pure #000, tinted so both themes read as one brand. */
+  [data-theme="dark"] {
+    color-scheme: dark;
+
+    --bg: #12110f;
+    --surface: #1a1815;
+    --surface-sunken: #0e0d0c;
+
+    --ink: #f2eee6; /* warm off-white, never #fff */
+    --ink-muted: #a19c93;
+    --ink-subtle: #6e6a63;
+    --ink-inverse: #12110f;
+
+    --border: #2a2723;
+    --border-strong: #3a3630;
+
+    --gold: #c9ac72; /* lifted for parity — 8.78:1 on --bg */
+    --gold-soft: rgb(201 172 114 / 0.12);
+    --gold-line: rgb(201 172 114 / 0.42);
+
+    --success: #6e9c82; /* 6.09:1 */
+    --success-soft: rgb(110 156 130 / 0.12);
+    --danger: #c97a7a; /* 5.93:1 */
+    --danger-soft: rgb(201 122 122 / 0.12);
+
+    --shadow-e1: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -14px rgb(0 0 0 / 0.55);
+  }
+
+  /* ------------------------------------------------------------------------
+     CONTRAST AUDIT (WCAG 2.1)
+       gold #B5965A on cream #F7F4EE ....... 2.56:1  FAILS AA small AND large
+       gold #B5965A on white   #FFFFFF ..... 2.81:1  FAILS
+       ink  #111111 on cream #F7F4EE ...... 17.30:1  PASSES
+       ink  #111111 on gold  #B5965A ....... 6.50:1  PASSES
+
+     Therefore: gold is a decorative accent only — rules, arcs, indicators,
+     focus rings, the logo mark. Any gold fill carries INK text, never light.
+     ------------------------------------------------------------------------ */
+
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color var(--dur) var(--ease-io), color var(--dur) var(--ease-io);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display), Georgia, "Times New Roman", serif;
+    font-weight: 400;
+  }
+
+  ::selection {
+    background: var(--gold-soft);
+    color: var(--ink);
+  }
+
+  /* Gold focus ring — one of only five permitted uses of the accent. */
+  :focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+    border-radius: var(--r-sm);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border: 3px solid var(--bg);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--ink-subtle);
+  }
+}
+
+/* ==========================================================================
+   Component classes
+   ========================================================================== */
+
+@layer components {
+  /* The single style that does ~40% of the luxury signal. */
+  .eyebrow {
+    font-family: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  /* Eyebrow with the gold hairline running off to the right. */
+  .eyebrow-rule {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .eyebrow-rule::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--gold);
+    opacity: 0.45;
+  }
+
+  .skeleton {
+    background-image: linear-gradient(
+      90deg,
+      var(--surface-sunken) 0%,
+      var(--surface-sunken) 40%,
+      var(--border) 50%,
+      var(--surface-sunken) 60%,
+      var(--surface-sunken) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s var(--ease-io) infinite;
+    border-radius: var(--r-sm);
+  }
+
+  /* Markdown body for the unified report. */
+  .prose-lifeos {
+    color: var(--ink);
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+  .prose-lifeos h1,
+  .prose-lifeos h2,
+  .prose-lifeos h3 {
+    font-family: var(--font-display), Georgia, serif;
+    letter-spacing: -0.015em;
+    margin: 1.75em 0 0.6em;
+    line-height: 1.25;
+  }
+  .prose-lifeos h1 {
+    font-size: 1.5rem;
+  }
+  .prose-lifeos h2 {
+    font-size: 1.25rem;
+  }
+  .prose-lifeos h3 {
+    font-size: 1.0625rem;
+  }
+  .prose-lifeos h1:first-child,
+  .prose-lifeos h2:first-child,
+  .prose-lifeos h3:first-child {
+    margin-top: 0;
+  }
+  .prose-lifeos p {
+    margin: 0 0 1em;
+  }
+  .prose-lifeos ul,
+  .prose-lifeos ol {
+    margin: 0 0 1em;
+    padding-left: 1.15em;
+  }
+  .prose-lifeos li {
+    margin: 0.3em 0;
+  }
+  .prose-lifeos ul > li {
+    list-style: none;
+    position: relative;
+  }
+  .prose-lifeos ul > li::before {
+    content: "";
+    position: absolute;
+    left: -0.9em;
+    top: 0.72em;
+    width: 4px;
+    height: 1px;
+    background: var(--gold);
+  }
+  .prose-lifeos ol > li {
+    list-style: decimal;
+  }
+  .prose-lifeos ol > li::marker {
+    color: var(--ink-subtle);
+    font-size: 0.8125rem;
+  }
+  .prose-lifeos strong {
+    font-weight: 600;
+  }
+  .prose-lifeos hr {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 1.75em 0;
+  }
+  .prose-lifeos code {
+    font-size: 0.8125rem;
+    background: var(--surface-sunken);
+    padding: 0.1em 0.35em;
+    border-radius: var(--r-sm);
+  }
+  .prose-lifeos table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 1em;
+    font-size: 0.8125rem;
+  }
+  .prose-lifeos th {
+    text-align: left;
+    font-weight: 500;
+    color: var(--ink-muted);
+    border-bottom: 1px solid var(--border);
+    padding: 0.5em 0.75em 0.5em 0;
+  }
+  .prose-lifeos td {
+    border-bottom: 1px solid var(--border);
+    padding: 0.55em 0.75em 0.55em 0;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ==========================================================================
+   Utilities
+   ========================================================================== */
+
+@layer utilities {
+  /* Misaligned digits are the fastest way to look cheap in a finance UI. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hairline {
+    border-top: 1px solid var(--border);
+  }
+
+  /* Staggered entrance — set --i on each child. */
+  .stagger > * {
+    animation: fade-rise var(--dur) var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+}
+
+/* ==========================================================================
+   Keyframes — opacity, translate, scale, blur only. No bounce, no spring.
+   ========================================================================== */
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-blur {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-node {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
