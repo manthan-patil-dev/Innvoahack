@@ -85,7 +85,7 @@ function RunView({ run }: { run: RunState }) {
 
       {run.response ? (
         <div className="animate-fade-rise">
-          <UnifiedReport response={run.response} />
+          <UnifiedReport response={run.response} nodes={run.nodes} />
         </div>
       ) : null}
 

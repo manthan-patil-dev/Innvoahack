@@ -155,7 +155,7 @@ class LifeCore:
                 agent="CriticAgent",
                 label=(
                     f"Validated {len(verdicts)} output(s), "
-                    f"{retry_count} retry" + ("" if retry_count == 1 else "ies")
+                    f"{retry_count} {'retry' if retry_count == 1 else 'retries'}"
                 ),
                 status="success",
                 elapsedMs=0,
