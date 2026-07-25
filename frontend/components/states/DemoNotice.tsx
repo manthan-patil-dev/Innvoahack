@@ -18,7 +18,9 @@ import { AlertBanner } from "@/components/states/AlertBanner";
  *               earns a real banner.
  */
 export function DemoNotice({ run }: { run: RunState }) {
-  if (run.backend !== "mock") return null;
+  // `includes` not `===`: a partially degraded run reports e.g. "openai+mock",
+  // and any fixture content at all is worth disclosing.
+  if (!run.backend?.includes("mock")) return null;
 
   const unmatched = run.intent?.clarification_needed === true;
 

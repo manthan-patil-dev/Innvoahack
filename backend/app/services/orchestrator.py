@@ -207,10 +207,22 @@ class LifeCore:
             len(results),
         )
 
+        # Report who actually served this run, not who was configured to.
+        # active_name is derived from config, so a provider that 401s on every
+        # call would still be reported as live while fixtures did the work.
+        served = [
+            r.backend for r in (intent_run, plan_run, *specialist_runs, response_run) if r
+        ]
+        served_by = (
+            served[0]
+            if served and all(b == served[0] for b in served)
+            else "+".join(sorted(set(served))) or get_router().active_name
+        )
+
         return ChatResponse(
             session_id=session_id,
             query=req.message,
-            backend=get_router().active_name,
+            backend=served_by,
             intent=intent,
             selected_agents=selected,
             results=results,

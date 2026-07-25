@@ -166,6 +166,77 @@ class ClaudeBackend:
 
 
 # --------------------------------------------------------------------------
+# OpenAI-compatible (OpenAI, Groq, Gemini)
+# --------------------------------------------------------------------------
+
+
+class OpenAICompatBackend:
+    """Any provider speaking OpenAI's /chat/completions contract.
+
+    OpenAI, Groq and Gemini all expose that endpoint, so one class covers all
+    three and only the key, base URL and model differ. Built on httpx rather
+    than a vendor SDK because httpx is already a dependency — adding these
+    providers costs no new install.
+
+    `response_format={"type": "json_object"}` is deliberately NOT sent. The
+    PlannerAgent's contract is a JSON *array*, and json_object mode requires a
+    top-level object, so enabling it would break that agent. extract_json in
+    agents/base.py already recovers JSON from fenced or prose-wrapped output.
+    """
+
+    def __init__(self, name: str, api_key: str, base_url: str, model: str) -> None:
+        self.name = name
+        self.model = model
+        self._client = httpx.AsyncClient(
+            base_url=base_url.rstrip("/"),
+            timeout=get_settings().agent_timeout_seconds,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+        )
+
+    async def complete(
+        self,
+        *,
+        agent_name: str,
+        system_prompt: str,
+        user_input: str,
+        effort: str = "medium",
+        max_tokens: int = 4096,
+    ) -> str:
+        # `effort` has no equivalent here; it is Anthropic-specific and ignored.
+        payload = {
+            "model": self.model,
+            "max_tokens": max_tokens,
+            "temperature": 0,  # these agents emit JSON, not prose
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_input},
+            ],
+        }
+
+        resp = await self._client.post("/chat/completions", json=payload)
+        if resp.status_code >= 400:
+            # Surface the provider's own message; it names bad models and bad
+            # keys precisely. The key itself lives in a header, never the body.
+            raise BackendError(f"{self.name} {resp.status_code}: {resp.text[:300]}")
+
+        data = resp.json()
+        choices = data.get("choices") or []
+        if not choices:
+            raise BackendError(f"{agent_name}: no choices in {self.name} response")
+
+        text = (choices[0].get("message") or {}).get("content") or ""
+        if not text.strip():
+            raise BackendError(f"{agent_name}: empty completion from {self.name}")
+        return text
+
+    async def aclose(self) -> None:
+        await self._client.aclose()
+
+
+# --------------------------------------------------------------------------
 # Mock
 # --------------------------------------------------------------------------
 
@@ -211,6 +282,7 @@ class BackendRouter:
         self.mode = settings.llm_backend.lower()
         self.lyzr: LyzrStudioBackend | None = None
         self.claude: ClaudeBackend | None = None
+        self.compat: list[OpenAICompatBackend] = []
         self.mock = MockBackend()
 
         if self.mode in ("auto", "lyzr") and settings.lyzr_api_key:
@@ -225,6 +297,16 @@ class BackendRouter:
             except Exception as exc:  # pragma: no cover - construction guard
                 logger.warning("Claude backend unavailable: %s", exc)
 
+        # openai | groq | gemini — each included only if it has a key, and
+        # under a forced mode only the named one is built.
+        for name, key, base_url, model in settings.openai_compat_providers():
+            if self.mode not in ("auto", name):
+                continue
+            try:
+                self.compat.append(OpenAICompatBackend(name, key, base_url, model))
+            except Exception as exc:  # pragma: no cover - construction guard
+                logger.warning("%s backend unavailable: %s", name, exc)
+
     @property
     def active_name(self) -> str:
         if self.mode == "mock":
@@ -233,7 +315,26 @@ class BackendRouter:
             return "lyzr"
         if self.claude:
             return "claude"
+        if self.compat:
+            return self.compat[0].name
         return "mock"
+
+    @property
+    def active_model(self) -> str:
+        """Model id of whichever backend leads the chain.
+
+        Reported by /api/health, so it must track the active backend — quoting
+        CLAUDE_MODEL while serving OpenAI would put a false model name on screen.
+        """
+        if self.mode == "mock":
+            return "scripted-fixtures"
+        if self.lyzr:
+            return "lyzr-studio"
+        if self.claude:
+            return get_settings().claude_model
+        if self.compat:
+            return self.compat[0].model
+        return "scripted-fixtures"
 
     def _chain(self, agent_name: str) -> list[LLMBackend]:
         if self.mode == "mock":
@@ -241,10 +342,11 @@ class BackendRouter:
         chain: list[LLMBackend] = []
         if self.lyzr and self.lyzr.supports(agent_name):
             chain.append(self.lyzr)
-        if self.claude and self.mode != "lyzr":
+        if self.claude:
             chain.append(self.claude)
-        elif self.claude and self.mode == "lyzr":
-            chain.append(self.claude)  # still the safety net under forced lyzr
+        chain.extend(self.compat)
+        # Fixtures stay last so a provider outage degrades the demo instead of
+        # ending it. Force LLM_BACKEND=mock to serve fixtures exclusively.
         chain.append(self.mock)
         return chain
 
@@ -278,7 +380,7 @@ class BackendRouter:
         raise BackendError(f"All backends failed for {agent_name}: {last}")
 
     async def aclose(self) -> None:
-        for backend in (self.lyzr, self.claude, self.mock):
+        for backend in (self.lyzr, self.claude, *self.compat, self.mock):
             if backend is not None:
                 await backend.aclose()
 
