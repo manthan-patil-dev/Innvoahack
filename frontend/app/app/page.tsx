@@ -9,7 +9,9 @@ import { PipelineTrace } from "@/components/product/PipelineTrace";
 import { AgentResultCard } from "@/components/product/AgentResultCard";
 import { ValidationNote } from "@/components/product/ValidationNote";
 import { UnifiedReport } from "@/components/product/UnifiedReport";
+import { ActionCenter } from "@/components/product/ActionCenter";
 import { deriveConfidence } from "@/lib/confidence";
+import { collectActions } from "@/lib/actions";
 import { EmptyState } from "@/components/states/EmptyState";
 import { AlertBanner } from "@/components/states/AlertBanner";
 import { Card } from "@/components/ui/card";
@@ -84,6 +86,13 @@ function RunView({ run }: { run: RunState }) {
       {run.response ? (
         <div className="animate-fade-rise">
           <UnifiedReport response={run.response} />
+        </div>
+      ) : null}
+
+      {run.response ? (
+        <div className="animate-fade-rise">
+          {/* Keyed by run so the checklist never carries over between runs. */}
+          <ActionCenter key={run.id} items={collectActions(run)} />
         </div>
       ) : null}
     </div>
