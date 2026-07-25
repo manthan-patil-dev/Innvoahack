@@ -10,9 +10,9 @@ import { Button } from "@/components/ui/button";
 /**
  * Who is signed in, and the way out.
  *
- * Signing out is a POST to /api/auth/logout followed by `router.refresh()`, so
- * the server re-renders with no session and the cached workspace tree is
- * dropped — a back-button press after signing out lands on /login, not on a
+ * Signing out clears the Supabase session in the browser, then `router.refresh()`
+ * makes the server re-render with no session and drops the cached workspace
+ * tree — so a back-button press after signing out lands on /login, not on a
  * stale copy of the workspace.
  */
 export function AccountMenu() {

@@ -17,6 +17,18 @@ export const SUPABASE_KEY =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
   "";
 
+/** Placeholder text from .env.example. Copied-but-not-filled is the common
+ *  case, and it must read as "not configured" rather than sending the app off
+ *  to resolve a hostname that does not exist. */
+function isPlaceholder(value: string): boolean {
+  return /YOUR[-_]/i.test(value);
+}
+
 export function isSupabaseConfigured(): boolean {
-  return SUPABASE_URL.length > 0 && SUPABASE_KEY.length > 0;
+  return (
+    SUPABASE_URL.startsWith("http") &&
+    !isPlaceholder(SUPABASE_URL) &&
+    SUPABASE_KEY.length > 0 &&
+    !isPlaceholder(SUPABASE_KEY)
+  );
 }

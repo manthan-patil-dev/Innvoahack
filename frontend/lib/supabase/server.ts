@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { SUPABASE_KEY, SUPABASE_URL } from "@/lib/supabase/config";
+import { SUPABASE_KEY, SUPABASE_URL, isSupabaseConfigured } from "@/lib/supabase/config";
 
 /**
  * Server client for Server Components and Route Handlers.
@@ -43,6 +43,11 @@ export function createClient() {
  * server. Anything making an authorisation decision has to use the verified one.
  */
 export async function getCurrentUser() {
+  // An unconfigured project has nobody signed in, by definition. Returning null
+  // rather than throwing means route handlers answer a clean 401 instead of a
+  // 500 that reads like a bug in the app.
+  if (!isSupabaseConfigured()) return null;
+
   const supabase = createClient();
   const {
     data: { user },

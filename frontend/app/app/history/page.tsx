@@ -2,7 +2,6 @@ import { TopBar } from "@/components/shell/TopBar";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { EmptyState } from "@/components/states/EmptyState";
 import { listMemories, listRuns } from "@/lib/supabase/queries";
 
 /**
