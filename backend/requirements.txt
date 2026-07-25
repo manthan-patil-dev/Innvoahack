@@ -6,6 +6,9 @@ httpx>=0.27.0
 python-dotenv==1.0.1
 python-multipart==0.0.20
 
+# Render compatibility: avoid pulling the latest build chain that may require Rust
+# on the hosted environment.
+
 # --- Optional providers ------------------------------------------------------
 # OpenAI, Groq and Gemini all speak the same /chat/completions contract and are
 # called over plain httpx, so they need no SDK.

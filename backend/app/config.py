@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     lyzr_agent_id_response: str = ""
 
     # Server
-    cors_origins: str = "http://localhost:3000,http://localhost:3100"
+    cors_origins: str = "http://localhost:3000,http://localhost:3100,https://innvoahack.vercel.app"
     agent_timeout_seconds: int = 60
 
     @property
