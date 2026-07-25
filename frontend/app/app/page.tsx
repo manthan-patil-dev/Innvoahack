@@ -7,7 +7,9 @@ import { SystemPanel } from "@/components/product/SystemPanel";
 import { ChatComposer } from "@/components/product/ChatComposer";
 import { PipelineTrace } from "@/components/product/PipelineTrace";
 import { AgentResultCard } from "@/components/product/AgentResultCard";
+import { ValidationNote } from "@/components/product/ValidationNote";
 import { UnifiedReport } from "@/components/product/UnifiedReport";
+import { deriveConfidence } from "@/lib/confidence";
 import { EmptyState } from "@/components/states/EmptyState";
 import { AlertBanner } from "@/components/states/AlertBanner";
 import { Card } from "@/components/ui/card";
@@ -63,11 +65,21 @@ function RunView({ run }: { run: RunState }) {
         </Card>
       )}
 
-      {run.results.map((result, i) => (
-        <div key={`${result.agent}-${i}`} className="animate-fade-rise">
-          <AgentResultCard result={result} />
-        </div>
-      ))}
+      {run.results.map((result, i) => {
+        // Provenance for this specific output: what it was asked, and what the
+        // Critic concluded. Matched by agent name rather than index, since the
+        // reveal order is node order, not results order.
+        const verdict = run.critic?.find((v) => v.agent === result.agent);
+        const node = run.nodes.find((n) => n.agent === result.agent);
+        const task = run.plan?.find((p) => p.agent === result.agent)?.task;
+
+        return (
+          <div key={`${result.agent}-${i}`} className="animate-fade-rise">
+            <AgentResultCard result={result} />
+            <ValidationNote confidence={deriveConfidence(verdict, node)} task={task} />
+          </div>
+        );
+      })}
 
       {run.response ? (
         <div className="animate-fade-rise">

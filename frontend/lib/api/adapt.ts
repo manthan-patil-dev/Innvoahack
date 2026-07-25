@@ -57,6 +57,11 @@ export function toRunState(data: ChatResponse): RunState {
     status: "running",
     backend: data.backend,
     dispatching: false,
+    // Carried so the UI can explain *why* each output exists and whether the
+    // Critic accepted it. All three arrive on every response already.
+    intent: data.intent,
+    plan: data.plan,
+    critic: data.critic,
   };
 }
 

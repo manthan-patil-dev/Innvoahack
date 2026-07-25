@@ -201,6 +201,12 @@ export interface RunState {
   backend?: string;
   /** True while awaiting /api/chat, before the first node is revealed. */
   dispatching?: boolean;
+  /** How LifeCore read the request — drives the routing rationale. */
+  intent?: IntentOutput;
+  /** The sub-task each specialist was actually given. */
+  plan?: PlanStep[];
+  /** CriticAgent's verdict per specialist output. */
+  critic?: CriticVerdict[];
 }
 
 /* --- Wire types for /api/chat --------------------------------------------- */
