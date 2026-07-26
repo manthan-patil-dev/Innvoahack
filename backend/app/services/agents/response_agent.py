@@ -39,7 +39,7 @@ agent = Agent(
     system_prompt=SYSTEM_PROMPT,
     schema=ResponseOutput,
     effort="medium",
-    max_tokens=8192,
+    max_tokens=4000,
     fallback={
         "headline": "Your request was processed, but the final synthesis step did not complete.",
         "unified_report": (

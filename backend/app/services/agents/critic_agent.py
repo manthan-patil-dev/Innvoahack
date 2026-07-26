@@ -29,7 +29,7 @@ agent = Agent(
     system_prompt=SYSTEM_PROMPT,
     schema=CriticVerdict,
     effort="low",
-    max_tokens=4096,
+    max_tokens=1200,
     fallback={
         "agent": "unknown",
         "valid": True,

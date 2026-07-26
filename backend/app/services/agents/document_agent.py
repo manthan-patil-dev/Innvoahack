@@ -29,7 +29,7 @@ agent = Agent(
     system_prompt=SYSTEM_PROMPT,
     schema=DocumentOutput,
     effort="medium",
-    max_tokens=4096,
+    max_tokens=2500,
     fallback={
         "document_type": "Unknown",
         "summary": "The document could not be processed on this run.",

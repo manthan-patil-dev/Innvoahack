@@ -63,7 +63,7 @@ agent = Agent(
     system_prompt=SYSTEM_PROMPT,
     schema=TravelOutput,
     effort="medium",
-    max_tokens=8192,
+    max_tokens=3000,
     fallback={
         "destination": "Unavailable",
         "budget_total": 0,

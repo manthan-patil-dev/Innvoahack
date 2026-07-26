@@ -31,7 +31,7 @@ agent = Agent(
     system_prompt=SYSTEM_PROMPT,
     schema=SecurityOutput,
     effort="medium",
-    max_tokens=4096,
+    max_tokens=2500,
     fallback={
         "input_type": "url",
         "risk_score": 50,

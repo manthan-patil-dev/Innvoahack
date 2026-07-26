@@ -31,7 +31,7 @@ agent = Agent(
     system_prompt=SYSTEM_PROMPT,
     schema=FinanceOutput,
     effort="medium",
-    max_tokens=4096,
+    max_tokens=2500,
     fallback={
         "summary": "Finance analysis is temporarily unavailable. Showing your last known position.",
         "monthly_total": 0,
