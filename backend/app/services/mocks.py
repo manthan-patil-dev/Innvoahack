@@ -102,8 +102,17 @@ TRAVEL = {
         "Book the sleeper at least 10 days out — Konkan Railway fills fast on weekends.",
         "Rent the scooter for the whole trip rather than per day; the daily rate drops to ₹400.",
         "Shacks north of Anjuna are roughly 30% cheaper than the Baga strip for the same food.",
+        "Withdraw cash in Panjim, not at the beach ATMs — they run dry by Saturday evening.",
     ],
-    "warnings": ["This plan assumes a non-peak weekend. Rates rise sharply from 20 December."],
+    "warnings": [
+        # The tradeoff the plan actually made, not just a generic caution. This is
+        # the line that shows the budget was held by a decision rather than luck.
+        "Held to ₹25,000 by taking the sleeper both ways instead of flying — that "
+        "buys back roughly ₹7,000 and costs about 11 hours each way.",
+        "The ₹2,000 buffer is the whole margin. A single peak-rate night in Anjuna "
+        "consumes it, and the plan then breaks the cap.",
+        "This plan assumes a non-peak weekend. Rates rise sharply from 20 December.",
+    ],
     "travel_score": 88,
 }
 

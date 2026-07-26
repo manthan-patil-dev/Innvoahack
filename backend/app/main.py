@@ -41,6 +41,10 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().cors_origin_list,
+    # Optional, and only consulted for a direct browser call. A preflight whose
+    # Origin matches neither the list nor this pattern is answered 400, which is
+    # exactly what a misconfigured CORS_ORIGINS looks like in the logs.
+    allow_origin_regex=get_settings().cors_origin_regex or None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -103,6 +103,8 @@ function collectFromResult(result: AgentResult): ActionItem[] {
 
     case "TravelAgent": {
       const o = result.output;
+      // Warnings are the tradeoffs the plan made and the risks it carries, so
+      // they outrank the tips below.
       o.warnings.forEach((text, i) =>
         items.push({
           id: at("warning", i),
@@ -110,6 +112,18 @@ function collectFromResult(result: AgentResult): ActionItem[] {
           source: result.agent,
           kind: "warning",
           priority: "MEDIUM",
+        }),
+      );
+      // Travel tips are written as concrete next steps — what to book now, where
+      // the same thing is cheaper — so they belong on the worklist rather than
+      // only inside the trip card, which is where they used to stop.
+      o.tips.forEach((text, i) =>
+        items.push({
+          id: at("recommendation", i),
+          text,
+          source: result.agent,
+          kind: "recommendation",
+          priority: "LOW",
         }),
       );
       break;

@@ -47,8 +47,18 @@ services:
       - key: GROQ_API_KEY
         sync: false
 
-      # Must list the exact Vercel origin, including https and with no trailing
-      # slash, or every browser request fails CORS preflight. Set this after the
-      # frontend has a URL, then redeploy.
+      # Only consulted when the browser calls this API directly. Behind the
+      # Next.js proxy (BACKEND_API_BASE_URL on Vercel, NEXT_PUBLIC_API_BASE_URL
+      # left unset) requests are server-to-server and CORS never applies.
+      #
+      # If you do run direct mode: this must list the exact origin, with https
+      # and no trailing slash. Anything else answers OPTIONS with 400.
+      #   https://innvoahack.vercel.app
       - key: CORS_ORIGINS
+        sync: false
+
+      # Covers Vercel preview deployments, which each get their own hostname
+      # that an exact list can never keep up with. Scoped to one project:
+      #   ^https://innvoahack(-[a-z0-9-]+)?\.vercel\.app$
+      - key: CORS_ORIGIN_REGEX
         sync: false

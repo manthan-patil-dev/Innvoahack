@@ -48,6 +48,14 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000,http://localhost:3100,https://innvoahack.vercel.app"
     agent_timeout_seconds: int = 60
 
+    # Vercel gives every preview deployment its own hostname, so an exact-match
+    # list goes stale the moment a branch is deployed. Left empty by default —
+    # it only matters when the browser calls this API directly. Behind the
+    # Next.js proxy the request is server-to-server and CORS never applies.
+    # Suggested value, scoped to one project rather than all of vercel.app:
+    #   ^https://innvoahack(-[a-z0-9-]+)?\.vercel\.app$
+    cors_origin_regex: str = ""
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
