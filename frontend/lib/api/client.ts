@@ -8,10 +8,24 @@
 
 import type { ChatRequestPayload, ChatResponse, HealthResponse } from "@/lib/types/agents";
 
-/** Trailing slash stripped so `${BASE}/api/chat` can never produce a double slash. */
-export const API_BASE = (
-  process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || ""
-).replace(/\/+$/, "");
+/**
+ * Always empty: the browser calls same-origin `/api/*` and the catch-all route
+ * handler forwards to the backend server-side.
+ *
+ * This used to read NEXT_PUBLIC_API_BASE_URL, which let the browser call the
+ * backend host directly — and that is a cross-origin request, so it only worked
+ * while the backend's CORS_ORIGINS exactly matched the deployment's origin. One
+ * trailing slash in that value took the whole app down with "No
+ * Access-Control-Allow-Origin", which the browser reports identically to the
+ * backend being offline. Going through the proxy means there is no cross-origin
+ * request to reject, no preflight to misconfigure, and Vercel preview URLs work
+ * without anyone updating a list.
+ *
+ * Point at a different backend with BACKEND_API_BASE_URL, read server-side in
+ * app/api/[...path]/route.ts. It keeps the backend host out of the client bundle
+ * too.
+ */
+export const API_BASE = "";
 
 /** Live runs legitimately take a while; mock mode returns in a couple of seconds. */
 const REQUEST_TIMEOUT_MS = 120_000;
