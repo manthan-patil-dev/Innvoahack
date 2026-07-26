@@ -21,8 +21,10 @@ out/
 *.tsbuildinfo
 
 # --- Claude Code -------------------------------------------------------
-# Per-machine permission grants. launch.json is shared and stays tracked.
+# Per-machine dev tooling: permission grants and local dev-server ports.
+# Neither belongs in the repo.
 .claude/settings.local.json
+.claude/launch.json
 
 # --- Editors / OS ------------------------------------------------------
 .DS_Store

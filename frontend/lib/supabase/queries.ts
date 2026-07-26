@@ -76,12 +76,54 @@ export async function listMemories(): Promise<MemoryRow[]> {
  * foreign key to `runs.id`. They are batched per table rather than per row —
  * five round trips instead of thirty.
  */
+/**
+ * Guarantee this user has a profile row before anything references it.
+ *
+ * Every table hangs off `profiles`, and the row is normally created by the
+ * `on_auth_user_created` trigger. An account made before that trigger existed
+ * has none, and the only symptom is a foreign key violation buried in a server
+ * log while the UI reports success — the run is on screen, it just never saved.
+ *
+ * Idempotent, so the cost after the first call is one no-op upsert.
+ */
+async function ensureProfile(userId: string, email: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .upsert(
+      { id: userId, email, display_name: email.split("@")[0] || null },
+      { onConflict: "id", ignoreDuplicates: true },
+    );
+
+  if (!error) return;
+
+  // A clash on the email rather than the id means a profile row already holds
+  // this address under a different id — the fixed-uuid demo profile seeded by
+  // the first version of the schema. RLS stops us adopting or deleting a row we
+  // do not own, and it should: that is a migration, not something a request
+  // handler gets to do quietly.
+  if (error.code === "23505" && error.message.includes("profiles_email_key")) {
+    console.error(
+      `[db] ensureProfile: a profile already exists for ${email} under a different id. ` +
+        "This is the seeded demo profile from schema v1. Re-run supabase/schema.sql — " +
+        "section 2.10 drops profiles with no matching auth user and backfills the real one.",
+    );
+    return;
+  }
+
+  console.error("[db] ensureProfile failed:", error.message);
+}
+
 export async function persistRun(
   userId: string,
+  email: string,
   chat: ChatResponse,
   actions: ActionItem[],
 ): Promise<string | null> {
   const supabase = createClient();
+
+  // Must precede the insert below: runs.user_id references profiles(id).
+  await ensureProfile(userId, email);
 
   const agentTimeMs = chat.nodes.reduce((total, node) => total + (node.elapsedMs ?? 0), 0);
   const retryCount = chat.response.action_log.filter((e) => e.status === "RETRY").length;

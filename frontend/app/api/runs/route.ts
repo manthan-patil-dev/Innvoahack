@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const runId = await persistRun(user.id, chat, body.actions ?? []);
+  const runId = await persistRun(user.id, user.email ?? "", chat, body.actions ?? []);
   if (!runId) {
     return NextResponse.json(
       { ok: false, code: "write_failed", message: "Could not save this run." },
