@@ -58,7 +58,11 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> list[str]:
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        # A browser's Origin header is scheme + host + port and never carries a
+        # trailing slash, so "https://app.vercel.app/" matches nothing and every
+        # preflight answers 400. One character, total outage, no useful error —
+        # normalise it rather than leave the trap set.
+        return [o.strip().rstrip("/") for o in self.cors_origins.split(",") if o.strip()]
 
     def openai_compat_providers(self) -> list[tuple[str, str, str, str]]:
         """(name, api_key, base_url, model) for each configured provider.

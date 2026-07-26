@@ -23,10 +23,21 @@ async def lifespan(app: FastAPI):
     # serving Groq put a model name in the log that never ran.
     logger.info("LifeCore online — backend=%s model=%s", backend.active_name, backend.active_model)
     if backend.active_name == "mock":
-        logger.warning(
-            "No LLM provider key configured (LYZR / ANTHROPIC / OPENAI / GROQ / GEMINI). "
-            "Running on scripted fixtures — orchestration is real, agent content is canned."
-        )
+        # Two very different causes, and the old message only described one of
+        # them. LLM_BACKEND=mock skips every provider before its key is even
+        # read, so reporting "no key configured" sent people hunting for a
+        # missing key that was sitting right there.
+        if get_settings().llm_backend.lower() == "mock":
+            logger.warning(
+                "LLM_BACKEND=mock — serving scripted fixtures by configuration. "
+                "Provider keys are IGNORED in this mode, including any that are set. "
+                "Set LLM_BACKEND=groq for a live model."
+            )
+        else:
+            logger.warning(
+                "No LLM provider key configured (LYZR / ANTHROPIC / OPENAI / GROQ / GEMINI). "
+                "Running on scripted fixtures — orchestration is real, agent content is canned."
+            )
     yield
     await backend.aclose()
 
