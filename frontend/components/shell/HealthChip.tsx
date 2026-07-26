@@ -95,9 +95,13 @@ export function HealthChip() {
           </div>
 
           {state === "offline" ? (
+            // API_BASE is empty when the browser talks to the same-origin proxy
+            // instead of the backend directly, and "No response from ." reads
+            // like a rendering bug rather than an outage.
             <p className="mt-3 text-meta text-ink-muted">
-              No response from <span className="text-ink">{API_BASE}</span>. Start the backend and
-              this reconnects on its own.
+              No response from{" "}
+              <span className="text-ink">{API_BASE || "the LifeCore backend"}</span>. It may be
+              waking from idle — this reconnects on its own.
             </p>
           ) : health ? (
             <>
