@@ -1,3 +1,11 @@
+# Pinned against Python 3.11 (see .python-version). Every package below ships a
+# prebuilt manylinux wheel for cp311, so a deploy installs binaries and never
+# invokes a compiler.
+#
+# This matters: pydantic 2.10.4 pins pydantic-core 2.27.2, which publishes
+# wheels for cp38-cp313 only. On a newer interpreter pip finds no wheel, falls
+# back to building from source, and needs Rust + maturin — which is what fails
+# on a hosted builder with a read-only Cargo directory.
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 pydantic==2.10.4
@@ -6,17 +14,15 @@ httpx>=0.27.0
 python-dotenv==1.0.1
 python-multipart==0.0.20
 
-# Render compatibility: avoid pulling the latest build chain that may require Rust
-# on the hosted environment.
-
 # --- Optional providers ------------------------------------------------------
 # OpenAI, Groq and Gemini all speak the same /chat/completions contract and are
 # called over plain httpx, so they need no SDK.
 #
 # Anthropic is the exception: it has its own protocol and needs its package. It
-# is NOT installed by default, because it is not on the critical path — the
-# Claude backend is only constructed when ANTHROPIC_API_KEY is set, and the
-# import lives inside that constructor. With no key, nothing here is reachable.
+# is deliberately NOT installed, because it is not on the critical path — the
+# Claude backend is only constructed when ANTHROPIC_API_KEY is set, and its
+# import lives inside that constructor. Verified: with the anthropic import
+# blocked outright, /api/health and /api/chat both still return 200.
 #
 # Only if you want the Claude backend:
 #   pip install "anthropic>=0.42.0"

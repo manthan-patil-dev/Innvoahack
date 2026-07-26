@@ -1,0 +1,54 @@
+# Render Blueprint for the LifeCore orchestrator.
+#
+# Render -> New -> Blueprint -> pick this repo. Everything below is applied
+# automatically; only the values marked `sync: false` are prompted for, so no
+# secret is ever stored in this file.
+#
+# The frontend is NOT here — it deploys to Vercel from the `frontend` directory.
+
+services:
+  - type: web
+    name: lifeos-core
+    runtime: python
+    plan: free
+    # The FastAPI app lives in a subdirectory; without this, Render builds the
+    # repo root, finds no requirements.txt, and fails before it starts.
+    rootDir: backend
+
+    buildCommand: pip install -r requirements.txt
+    # $PORT is assigned by Render. Binding 127.0.0.1 or a fixed port makes the
+    # service unreachable and the deploy times out as "no open ports detected".
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+    healthCheckPath: /api/health
+
+    envVars:
+      # The whole reason this deploy failed before. pydantic-core 2.27.2 has no
+      # cp314 wheel, so a newer interpreter tries to compile it with Rust and
+      # dies on a read-only Cargo directory. 3.11.9 has a prebuilt wheel.
+      # Kept in step with backend/.python-version.
+      - key: PYTHON_VERSION
+        value: 3.11.9
+
+      # Groq is the provider this project has actually been run against, and it
+      # is free-tier friendly. `auto` would burn a round trip per agent on every
+      # provider whose key is missing or rate-limited.
+      - key: LLM_BACKEND
+        value: groq
+
+      - key: GROQ_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: AGENT_TIMEOUT_SECONDS
+        value: "60"
+
+      # Prompted at deploy time, never committed.
+      - key: GROQ_API_KEY
+        sync: false
+
+      # Must list the exact Vercel origin, including https and with no trailing
+      # slash, or every browser request fails CORS preflight. Set this after the
+      # frontend has a URL, then redeploy.
+      - key: CORS_ORIGINS
+        sync: false
